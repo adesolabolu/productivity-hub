@@ -33,14 +33,30 @@
 
   <!-- Navigation -->
   <div class="sidebar-section">
-    <div class="sidebar-section-label">Navigation</div>
+    <div class="sidebar-section-label">Tasks</div>
 
     <button class="nav-btn active" id="nav-tasks">
       <span class="nav-icon">✅</span>
-      <span>Tasks</span>
+      <span>All Tasks</span>
       <span class="nav-badge" id="tasksBadge">0</span>
     </button>
+    <button class="nav-btn" id="nav-today">
+      <span class="nav-icon">📅</span>
+      <span>Today</span>
+      <span class="nav-badge" id="todayBadge">0</span>
+    </button>
+    <button class="nav-btn" id="nav-tomorrow">
+      <span class="nav-icon">🌞</span>
+      <span>Tomorrow</span>
+      <span class="nav-badge" id="tomorrowBadge">0</span>
+    </button>
+    <button class="nav-btn" id="nav-upcoming">
+      <span class="nav-icon">🗓</span>
+      <span>Upcoming</span>
+      <span class="nav-badge" id="upcomingBadge">0</span>
+    </button>
 
+    <div class="sidebar-section-label" style="margin-top:12px">Other</div>
     <button class="nav-btn" id="nav-notes">
       <span class="nav-icon">📝</span>
       <span>Notes</span>
@@ -87,6 +103,7 @@
 
     <!-- Tasks Panel -->
     <section class="view-panel active" id="tasksPanel">
+      <div id="dailyProgressWidget" class="progress-widget" style="display:none;"></div>
       <div class="cards-grid" id="tasksGrid">
         <div class="spinner"></div>
       </div>

@@ -247,6 +247,70 @@ function renderNoteCard(note, archived = false) {
   </div>`;
 }
 
+// ── Daily Progress Widget ────────────────────────────────────────────────────
+
+function renderDailyProgress() {
+  const widget = document.getElementById('dailyProgressWidget');
+  if (!widget) return;
+  
+  if (State.view !== 'tasks') {
+    widget.style.display = 'none';
+    return;
+  }
+  
+  widget.style.display = 'flex';
+  
+  const remainingTasks = State.tasks.filter(t => !t.is_complete).length;
+  
+  const today = new Date();
+  const completedToday = State.tasks.filter(t => {
+    if (!t.is_complete) return false;
+    const updateDate = new Date(t.updated_at);
+    return updateDate.getDate() === today.getDate() && 
+           updateDate.getMonth() === today.getMonth() && 
+           updateDate.getFullYear() === today.getFullYear();
+  }).length;
+  
+  const totalRelevant = remainingTasks + completedToday;
+  const pct = totalRelevant === 0 ? 0 : Math.round((completedToday / totalRelevant) * 100);
+  
+  let msg = "You're getting started";
+  if (pct === 100 && totalRelevant > 0) msg = "You crushed it! 🎉";
+  else if (pct >= 50) msg = "Halfway there! 🚀";
+  else if (pct > 0) msg = "Making progress 📈";
+  else if (totalRelevant === 0) msg = "No tasks for today 🌴";
+  
+  const dateDisplay = today.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+
+  widget.innerHTML = `
+    <div class="progress-header">
+      <div class="progress-title">Daily progress</div>
+      <div class="progress-date">${dateDisplay}</div>
+    </div>
+    
+    <div class="progress-bar-container">
+      <div class="progress-meta">
+        <span>${msg}</span>
+        <span class="progress-pct">${pct}%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill-main" style="width: ${pct}%"></div>
+      </div>
+    </div>
+    
+    <div class="progress-stats">
+      <div class="stat-box">
+        <div class="stat-val">${remainingTasks}</div>
+        <div class="stat-label">Tasks remaining</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">${completedToday}</div>
+        <div class="stat-label">Completed today</div>
+      </div>
+    </div>
+  `;
+}
+
 // ── Cards Grid Renderer ─────────────────────────────────────────────────────
 
 function renderGrid(container, items, renderFn, emptyTitle, emptyMsg, archived = false) {
@@ -293,6 +357,17 @@ function renderSidebarTags() {
   // Update nav badges
   document.getElementById('tasksBadge').textContent = State.tasks.length;
   document.getElementById('notesBadge').textContent = State.notes.length;
+  
+  const today = new Date(); today.setHours(0,0,0,0);
+  const pendingTasks = State.tasks.filter(t => !t.is_complete);
+  
+  const todayCount = pendingTasks.filter(t => t.due_date && Math.round((new Date(t.due_date + 'T00:00:00') - today) / 86400000) === 0).length;
+  const tomorrowCount = pendingTasks.filter(t => t.due_date && Math.round((new Date(t.due_date + 'T00:00:00') - today) / 86400000) === 1).length;
+  const upcomingCount = pendingTasks.filter(t => t.due_date && Math.round((new Date(t.due_date + 'T00:00:00') - today) / 86400000) > 1).length;
+
+  const bToday = document.getElementById('todayBadge'); if(bToday) bToday.textContent = todayCount;
+  const bTomorrow = document.getElementById('tomorrowBadge'); if(bTomorrow) bTomorrow.textContent = tomorrowCount;
+  const bUpcoming = document.getElementById('upcomingBadge'); if(bUpcoming) bUpcoming.textContent = upcomingCount;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -315,7 +390,7 @@ function switchView(view, skipLoad = false) {
   document.getElementById('searchResultsView').classList.remove('active');
 
   // Page title
-  const titles = { tasks: 'Tasks', notes: 'Notes', archive: 'Archive' };
+  const titles = { tasks: 'All Tasks', today: 'Today', tomorrow: 'Tomorrow', upcoming: 'Upcoming', notes: 'Notes', archive: 'Archive' };
   document.getElementById('pageTitle').textContent = titles[view] || 'Productivity Hub';
 
   // Tag filter badge
@@ -329,21 +404,47 @@ function switchView(view, skipLoad = false) {
   }
 
   // Show create button only for tasks/notes views
+  const isTaskView = ['tasks', 'today', 'tomorrow', 'upcoming'].includes(view);
   const createBtn = document.getElementById('createBtn');
-  createBtn.style.display = (view === 'tasks' || view === 'notes') ? 'inline-flex' : 'none';
-  createBtn.textContent = view === 'tasks' ? '＋ New Task' : '＋ New Note';
+  createBtn.style.display = (isTaskView || view === 'notes') ? 'inline-flex' : 'none';
+  createBtn.textContent = isTaskView ? '＋ New Task' : '＋ New Note';
 
   renderSidebarTags();
 
-  if (view === 'tasks') {
+  if (isTaskView) {
     const panel = document.getElementById('tasksPanel');
     panel.classList.add('active');
+    renderDailyProgress();
+    
+    let filteredTasks = State.tasks;
+    const todayDate = new Date(); todayDate.setHours(0,0,0,0);
+    
+    if (view === 'today') {
+      filteredTasks = State.tasks.filter(t => {
+        if (!t.due_date || t.is_complete) return false;
+        const due = new Date(t.due_date + 'T00:00:00');
+        return Math.round((due - todayDate) / 86400000) === 0;
+      });
+    } else if (view === 'tomorrow') {
+      filteredTasks = State.tasks.filter(t => {
+        if (!t.due_date || t.is_complete) return false;
+        const due = new Date(t.due_date + 'T00:00:00');
+        return Math.round((due - todayDate) / 86400000) === 1;
+      });
+    } else if (view === 'upcoming') {
+      filteredTasks = State.tasks.filter(t => {
+        if (!t.due_date || t.is_complete) return false;
+        const due = new Date(t.due_date + 'T00:00:00');
+        return Math.round((due - todayDate) / 86400000) > 1;
+      });
+    }
+    
     renderGrid(
       document.getElementById('tasksGrid'),
-      State.tasks,
+      filteredTasks,
       renderTaskCard,
-      'No tasks yet',
-      'Create your first task using the button above.',
+      view === 'tasks' ? 'Your task list is empty' : `No tasks for ${view}`,
+      'Add a task to get started.',
     );
   } else if (view === 'notes') {
     const panel = document.getElementById('notesPanel');
@@ -352,8 +453,8 @@ function switchView(view, skipLoad = false) {
       document.getElementById('notesGrid'),
       State.notes,
       renderNoteCard,
-      'No notes yet',
-      'Start a scratchpad note using the button above.',
+      'Your notes are empty',
+      'Add a note to start writing.',
     );
   } else if (view === 'archive') {
     const panel = document.getElementById('archivePanel');
@@ -371,7 +472,7 @@ function renderArchiveView() {
       <div class="empty-state">
         <div class="empty-icon">📦</div>
         <h3>Archive is empty</h3>
-        <p>Archived tasks and notes will appear here.</p>
+        <p>Archive completed tasks or notes to see them here.</p>
       </div>`;
     return;
   }
@@ -855,6 +956,18 @@ function init() {
   document.getElementById('nav-tasks').addEventListener('click', () => {
     State.filterTagId = null;
     switchView('tasks');
+  });
+  document.getElementById('nav-today').addEventListener('click', () => {
+    State.filterTagId = null;
+    switchView('today');
+  });
+  document.getElementById('nav-tomorrow').addEventListener('click', () => {
+    State.filterTagId = null;
+    switchView('tomorrow');
+  });
+  document.getElementById('nav-upcoming').addEventListener('click', () => {
+    State.filterTagId = null;
+    switchView('upcoming');
   });
   document.getElementById('nav-notes').addEventListener('click', () => {
     State.filterTagId = null;
