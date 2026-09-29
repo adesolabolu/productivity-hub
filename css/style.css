@@ -7,6 +7,44 @@
 
 /* ── CSS Variables ─────────────────────────────────────────────────────────── */
 :root {
+  /* Core palette: Light Mode (Crisp White & Structural Blue) */
+  --bg-base:        #FFFFFF;
+  --bg-surface:     #F9FAFB;
+  --bg-card:        #FFFFFF;
+  --bg-card-hover:  #F3F4F6;
+  --bg-elevated:    #E5E7EB;
+  --bg-input:       #FFFFFF;
+  --border:         #E5E7EB;
+  --border-focus:   #2563EB;
+
+  /* Text */
+  --text-primary:   #111827;
+  --text-secondary: #4B5563;
+  --text-muted:     #9CA3AF;
+  --text-inverse:   #FFFFFF;
+
+  /* Accent */
+  --accent:         #2563EB;
+  --accent-hover:   #1D4ED8;
+  --accent-dim:     rgba(37, 99, 235, 0.1);
+  --accent-glow:    none;
+
+  /* Priority colors */
+  --priority-high:   #DC2626;
+  --priority-medium: #EA580C;
+  --priority-low:    #059669;
+  --priority-high-bg:   rgba(220, 38, 38, 0.1);
+  --priority-medium-bg: rgba(234, 88, 12, 0.1);
+  --priority-low-bg:    rgba(5, 150, 105, 0.1);
+
+  /* Status */
+  --success:  #059669;
+  --warning:  #D97706;
+  --danger:   #DC2626;
+  --info:     #2563EB;
+}
+
+[data-theme="dark"] {
   /* Core palette: Deep Pine & Marigold */
   --bg-base:        #0B1311;
   --bg-surface:     #121E1A;
@@ -42,6 +80,9 @@
   --warning:  #F2C94C;
   --danger:   #E87B7B;
   --info:     #7BAAE8;
+}
+
+:root {
 
   /* Sidebar */
   --sidebar-w: 260px;

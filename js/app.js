@@ -948,10 +948,36 @@ function escHtml(str) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
+   THEME
+══════════════════════════════════════════════════════════════════════════════ */
+
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('themeToggle').textContent = '☀️';
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('themeToggle').textContent = '🌙';
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  document.getElementById('themeToggle').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════════════════════════ */
 
 function init() {
+  initTheme();
+  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
   // Nav buttons
   document.getElementById('nav-tasks').addEventListener('click', () => {
     State.filterTagId = null;
