@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Productivity Hub – Tasks, Notes & More</title>
+  <meta name="description" content="A beautiful, full-featured productivity app for managing tasks, notes, subtasks, tags, and more." />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- marked.js for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════════════════════════ -->
+<aside id="sidebar">
+
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <div class="logo-icon">🚀</div>
+    <span class="logo-text">Productivity Hub</span>
+  </div>
+
+  <!-- Global Search -->
+  <div class="sidebar-search">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="search" id="globalSearch" placeholder="Search tasks & notes…"
+             autocomplete="off" spellcheck="false" />
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Navigation</div>
+
+    <button class="nav-btn active" id="nav-tasks">
+      <span class="nav-icon">✅</span>
+      <span>Tasks</span>
+      <span class="nav-badge" id="tasksBadge">0</span>
+    </button>
+
+    <button class="nav-btn" id="nav-notes">
+      <span class="nav-icon">📝</span>
+      <span>Notes</span>
+      <span class="nav-badge" id="notesBadge">0</span>
+    </button>
+
+    <button class="nav-btn" id="nav-archive">
+      <span class="nav-icon">📦</span>
+      <span>Archive</span>
+    </button>
+  </div>
+
+  <!-- Tags -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Tags</div>
+  </div>
+
+  <div class="sidebar-tags">
+    <div id="tagFilterList"><!-- dynamic --></div>
+    <button class="add-tag-btn" onclick="openTagModal()">
+      <span>＋</span> New Tag
+    </button>
+  </div>
+
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════════════════════════ -->
+<div id="mainContent">
+
+  <!-- Top Bar -->
+  <header id="topBar">
+    <h1 id="pageTitle">Tasks</h1>
+    <span id="viewTagFilter"></span>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button id="createBtn" class="btn-primary">＋ New Task</button>
+    </div>
+  </header>
+
+  <!-- Content Area -->
+  <main id="contentArea">
+
+    <!-- Tasks Panel -->
+    <section class="view-panel active" id="tasksPanel">
+      <div class="cards-grid" id="tasksGrid">
+        <div class="spinner"></div>
+      </div>
+    </section>
+
+    <!-- Notes Panel -->
+    <section class="view-panel" id="notesPanel">
+      <div class="cards-grid" id="notesGrid">
+        <div class="spinner"></div>
+      </div>
+    </section>
+
+    <!-- Archive Panel -->
+    <section class="view-panel" id="archivePanel">
+      <div id="archiveContent">
+        <div class="spinner"></div>
+      </div>
+    </section>
+
+    <!-- Search Results -->
+    <section id="searchResultsView">
+      <div id="searchResultsContent"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TASK MODAL
+══════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="taskModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+    <div class="modal-header">
+      <h2 class="modal-title" id="taskModalTitle">New Task</h2>
+      <button class="modal-close" onclick="closeModal('taskModal')" aria-label="Close">✕</button>
+    </div>
+
+    <!-- Title -->
+    <div class="form-group">
+      <label class="form-label" for="taskTitle">Title <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="taskTitle" class="form-input" placeholder="What needs to be done?" />
+    </div>
+
+    <!-- Description / Notes -->
+    <div class="form-group">
+      <label class="form-label" for="taskDescription">Notes / Description</label>
+      <textarea id="taskDescription" class="form-textarea" placeholder="Links, instructions, or context…"></textarea>
+    </div>
+
+    <!-- Priority & Due Date (2-col) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="form-group">
+        <label class="form-label" for="taskPriority">Priority</label>
+        <select id="taskPriority" class="form-select">
+          <option value="high">🔴 High</option>
+          <option value="medium" selected>🟠 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="taskDueDate">Due Date</label>
+        <input type="date" id="taskDueDate" class="form-input" />
+      </div>
+    </div>
+
+    <!-- Tags -->
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <div class="tag-selector" id="taskTagSelector"><!-- dynamic --></div>
+    </div>
+
+    <!-- Subtasks -->
+    <div class="form-group">
+      <div class="subtasks-header">
+        <label class="form-label" style="margin:0">Subtasks / Checklist</label>
+      </div>
+      <div class="modal-subtask-list" id="modalSubtaskList"></div>
+      <div class="subtask-add-wrap">
+        <input type="text" id="newSubtaskInput" class="form-input"
+               placeholder="Add a subtask… (Enter to add)" />
+        <button class="btn-secondary" onclick="addPendingSubtask()">Add</button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('taskModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     NOTE MODAL
+══════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="noteModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="noteModalTitle">
+    <div class="modal-header">
+      <h2 class="modal-title" id="noteModalTitle">New Note</h2>
+      <button class="modal-close" onclick="closeModal('noteModal')" aria-label="Close">✕</button>
+    </div>
+
+    <!-- Title -->
+    <div class="form-group">
+      <label class="form-label" for="noteTitle">Title <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="noteTitle" class="form-input" placeholder="Note title…" />
+    </div>
+
+    <!-- Markdown Body -->
+    <div class="form-group">
+      <label class="form-label">Body (Markdown supported)</label>
+      <div class="note-editor-tabs">
+        <button class="note-tab active" data-tab="write" onclick="setNoteTab('write')">✏️ Write</button>
+        <button class="note-tab" data-tab="preview" onclick="setNoteTab('preview')">👁 Preview</button>
+      </div>
+      <textarea id="noteBody" class="form-textarea" style="min-height:160px"
+                placeholder="Start writing… **bold**, *italic*, `code`, - lists, > blockquotes"></textarea>
+      <div id="notePreview" style="display:none"></div>
+    </div>
+
+    <!-- Tags -->
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <div class="tag-selector" id="noteTagSelector"><!-- dynamic --></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('noteModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveNote()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TAG MODAL
+══════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="tagModal">
+  <div class="modal" style="max-width:400px" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h2 class="modal-title">New Tag</h2>
+      <button class="modal-close" onclick="closeModal('tagModal')" aria-label="Close">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="tagName">Tag Name</label>
+      <input type="text" id="tagName" class="form-input" placeholder="e.g. work, personal, ideas" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Color</label>
+      <div class="color-picker-row" id="colorPicker"></div>
+      <input type="color" id="tagColorInput" value="#6366f1"
+             style="margin-top:10px;width:100%;height:36px;border:1px solid var(--border);
+                    border-radius:var(--radius-md);background:var(--bg-input);cursor:pointer;"
+             title="Custom color" />
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('tagModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveTag()">Create Tag</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════════════════════════════════════ -->
+<div id="toastContainer" aria-live="polite"></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     MOBILE BOTTOM NAV
+══════════════════════════════════════════════════════════════════ -->
+<nav id="bottomNav" class="bottom-nav">
+  <button class="bot-nav-btn active" id="bot-nav-tasks" onclick="switchView('tasks')">
+    <span class="bot-nav-icon">✅</span>
+    <span class="bot-nav-label">Tasks</span>
+  </button>
+  <button class="bot-nav-btn" id="bot-nav-notes" onclick="switchView('notes')">
+    <span class="bot-nav-icon">📝</span>
+    <span class="bot-nav-label">Notes</span>
+  </button>
+  <button class="bot-nav-btn" id="bot-nav-archive" onclick="switchView('archive')">
+    <span class="bot-nav-icon">📦</span>
+    <span class="bot-nav-label">Archive</span>
+  </button>
+  <button class="bot-nav-btn" onclick="toggleSidebar()">
+    <span class="bot-nav-icon">☰</span>
+    <span class="bot-nav-label">Menu</span>
+  </button>
+</nav>
+
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+<script src="js/app.js"></script>
+
+</body>
+</html>
